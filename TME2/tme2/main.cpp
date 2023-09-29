@@ -17,39 +17,30 @@ int main () {
 	// prochain mot lu
 	string word;
 
-	vector<string> vec;
+	// Vecteur de paires (mot, nombre d'occurrences)
+	vector<pair<string, int>> wordOccurrences;  
 	
 	// une regex qui reconnait les caractères anormaux (négation des lettres)
 	regex re( R"([^a-zA-Z])");
+
 	while (input >> word) {
 		// élimine la ponctuation et les caractères spéciaux
 		word = regex_replace ( word, re, "");
 		// passe en lowercase
 		transform(word.begin(),word.end(),word.begin(),::tolower);
 		
-		bool lu = false;
-		for(const string & mot: vec){
-			if(mot==word){
-				lu = true;
-				break;
-			}
-			
-		}
-		if(!lu){
-			nombre_lu++;
-			vec.push_back(word);
-			
-			// word est maintenant "tout propre"
-			
-				
-		}
-		if (nombre_lu % 100 == 0){
-						
-			// on affiche un mot "propre" sur 100
-			cout << nombre_lu << ": "<< word << endl;
-						
-		}
-				
+		// Recherche si le mot existe déjà dans le vecteur wordOccurrences
+        auto it = find_if(wordOccurrences.begin(), wordOccurrences.end(),
+                          [&](const pair<string, int>& entry) { return entry.first == word; });
+
+        if (it != wordOccurrences.end()) {
+            // Si le mot existe déjà, incrémente son nombre d'occurrences
+            it->second++;
+        } else {
+            // Si le mot est nouveau, l'ajoute au vecteur avec une occurrence de 1
+            wordOccurrences.push_back(make_pair(word, 1));
+        }
+		nombre_lu++;
 	}
 	input.close();
 
@@ -60,7 +51,12 @@ int main () {
               << duration_cast<milliseconds>(end - start).count()
               << "ms.\n";
 
-    cout << "Found a total of " << nombre_lu << " words." << endl;
+    // Afficher le nombre d'occurrences des mots spécifiques
+    for (const pair<string, int>& entry : wordOccurrences) {
+        if (entry.first == "war" || entry.first == "peace" || entry.first == "toto") {
+            cout << "Occurrences of '" << entry.first << "': " << entry.second << " times." << endl;
+        }
+    }
 
     return 0;
 }
