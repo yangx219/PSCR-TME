@@ -1,4 +1,11 @@
 
+#include "List.h"   //importer les bibliothèques associées
+#include <cstring>
+#include <iostream>
+#include <cstddef>
+
+
+
 namespace pr {
 
 // ******************* Chainon
@@ -7,17 +14,20 @@ Chainon::Chainon (const std::string & data, Chainon * next):data(data),next(next
 size_t Chainon::length() {
 	size_t len = 1;
 	if (next != nullptr) {
-		len += next->length();
+		len++;
+		next = next->next;
 	}
-	return length();
+	return len;
 }
 
-void Chainon::print (std::ostream & os) {
+void Chainon::print (std::ostream & os)  const{//accorder l'interface et l'implémentation
 	os << data ;
 	if (next != nullptr) {
 		os << ", ";
+		next->print(os);
 	}
-	next->print(os);
+	
+	
 }
 
 // ******************  List
@@ -45,7 +55,7 @@ void List::push_front (const std::string& val) {
 	tete = new Chainon(val,tete);
 }
 
-bool empty() {
+bool List::empty() {//fault : use of undeclared identifier 'tete'
 	return tete == nullptr;
 }
 
@@ -59,7 +69,7 @@ size_t List::size() const {
 
 } // namespace pr
 
-std::ostream & operator<< (std::ostream & os, const pr::List & vec)
+std::ostream & pr::operator<< (std::ostream & os, const pr::List & vec)
 {
 	os << "[";
 	if (vec.tete != nullptr) {

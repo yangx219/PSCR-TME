@@ -135,3 +135,492 @@ int main () {
 
     return 0;
 }
+
+//main.cpp
+#include <iostream>
+#include <fstream>
+#include <regex>
+#include <chrono>
+#include <vector>
+#include <algorithm>
+#include "HashMap.h"
+
+using namespace std;
+using namespace pr;
+
+void printFrequency (const string & word, HashMap<string,int> & map) { 
+	auto it = map.find(word); 
+	//如果找到满足条件的元素，it 将指向该元素；如果未找到满足条件的元素，it 将指向范围的末尾
+	if (it != map.end()) {  
+		std::cout << "Frequency : " << it->key << ":" << it->value << endl; 
+		} else {
+			 std::cout << "Word :"<< word << " not found." << endl; 
+		}
+	}
+int main () {
+
+	HashMap<std::string,int> map(2<<18); // 256 k word capacity 
+	ifstream input = ifstream("/tmp/WarAndPeace.txt"); 
+	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now(); 
+	std::cout << "Parsing War and Peace" << endl; 
+	std::string s; 
+	regex re( R"([^a-zA-Z])");
+	while(input >> s) { 
+		s = regex_replace ( s, re, ""); 
+		std::transform(s.begin(),s.end(),s.begin(),::tolower); 
+		auto ret = map.put(s, 1);
+		if (! ret.second) { 
+			(*ret.first).value++;
+			}
+	}
+	input.close();
+	// std::cout << "Counts :" << map << endl;
+	std::cout << "Finished Parsing War and Peace" << endl;
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now(); 
+	std::cout << "Parsing with hash took " 
+	<< std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
+	<< "ms.\n"; 
+	start = std::chrono::steady_clock::now(); 
+	std::cout << "Parsing War and Peace" << endl; 
+	vector<pair<string,int> > counts; 
+	counts.reserve(5000); 
+	input = ifstream("/tmp/WarAndPeace.txt"); 
+	while (input >> s) { 
+		s = regex_replace ( s, re, ""); 
+		std::transform(s.begin(),s.end(),s.begin(),::tolower); 
+		auto it = counts.begin(); 
+		while (it != counts.end()) { 
+			if (it->first == s) { 
+				break; 
+			} 
+			++it; 
+			if (it != counts.end()) { 
+				it->second++; 
+			} else { 
+					counts.push_back(make_pair(s,1));
+			} 
+		} 
+		input.close(); 
+		end = std::chrono::steady_clock::now(); 
+		std::cout << "Parsing with pair<string,int> took " 
+					<< std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+					<< "ms.\n"; 
+
+		printFrequency("war",map); 
+		printFrequency("peace",map); 
+		printFrequency("toto",map); 
+		start = std::chrono::steady_clock::now();
+		std::cout << "Most frequent" << endl;
+		std::vector<pr::HashMap<std::string,int>::Entry * > entries;
+		entries.reserve(map.size()); 
+		for (auto it = map.begin() ; it != map.end() ; ++it) { 
+			entries.push_back(& (*it) ); 
+		} 
+		std::sort(entries.begin(),entries.end(), [] (auto a,auto b) { return a->value > b 
+			->value ;});
+		int line=0; 
+		for (const auto & val : entries) {
+			std::cout << val->key << "->" << val->value << " ,"; 
+			if (++line % 10 == 0) {
+				std::cout << endl; 
+			} 
+			if (line == 100) { 
+				break; 
+			} 
+		} 
+		std::cout << std::endl;
+		
+		end = std::chrono::steady_clock::now(); 
+		std::cout << "Sorting by frequency took " 
+		<< std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() 
+		<< "us.\n"; 
+		
+		return 0; 
+	}
+}
+
+
+
+
+
+
+//54
+
+#ifndef SRC_HASHMAP_H_
+#define SRC_HASHMAP_H_
+
+#include <cstddef>
+#include <ostream>
+#include <forward_list>
+#include <vector>
+#include <algorithm> // 添加这个头文件
+
+namespace pr {
+
+template <typename K, typename V>
+class HashMap {
+public:
+    class Entry {
+    public:
+        K key;
+        V value;
+        Entry(const K &k, const V& v) : key(k), value(v) {}
+    };
+
+private:
+    typedef std::vector<std::forward_list<Entry> > buckets_t;
+    buckets_t buckets;
+    size_t sz;
+
+public:
+    HashMap(size_t size) : buckets(size), sz(0) {}
+
+    V* get(const K & key) {
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (Entry & ent : buckets[target]) {
+            if (ent.key == key) {
+                return & ent.value;
+            }
+        }
+        return nullptr;
+    }
+
+    std::pair<typename std::forward_list<Entry>::iterator, bool> put(const K & key, const V & value) {
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (Entry & ent : buckets[target]) {
+            if (ent.key == key) {
+                return std::make_pair(buckets[target].before_begin(), false);
+            }
+        }
+        sz++;
+        buckets[target].emplace_front(Entry(key, value));
+        return std::make_pair(buckets[target].before_begin(), true);
+    }
+
+    size_t size() const { return sz; }
+
+    void grow() {
+        HashMap other = HashMap(buckets.size() * 2);
+        for (auto & list : buckets) {
+            for (auto & entry : list) {
+                other.put(entry.key, entry.value);
+            }
+        }
+        buckets = std::move(other.buckets);
+    }
+
+
+
+    //in instantiation of member function 'pr::HashMap<std::string, int>::find' requested here auto it = map.find(word); 
+    //error: member reference type 'pr::HashMap<std::string, int>::iterator' is not a pointer; did you mean to use '.'? std::cout << "Frequency : " << it->key << ":" << it->value << endl; 
+    
+    typename HashMap<std::string, int>::iterator find(const K & key) {
+    size_t h = std::hash<K>()(key);
+    size_t target = h % buckets.size();
+    for (auto it = buckets[target].begin(); it != buckets[target].end(); ++it) {
+        if (it->key == key) {
+            return iterator(buckets.end(), target, it);
+        }
+    }
+    return end();
+}
+
+
+    //no member named 'insert' in 'pr::HashMap<std::string, int>',,auto ret = map.insert({s, 1});
+     std::pair<typename std::forward_list<Entry>::iterator, bool> insert(const std::pair<K, V>& kvPair) {
+        const K& key = kvPair.first;
+        const V& value = kvPair.second;
+
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (Entry& ent : buckets[target]) {
+            if (ent.key == key) {
+                ent.value = value; // 更新现有值
+                return std::make_pair(buckets[target].before_begin(), false);
+            }
+        }
+        sz++;
+        buckets[target].emplace_front(Entry(key, value)); // 插入新的键值对
+        return std::make_pair(buckets[target].before_begin(), true);
+        }
+
+    class iterator { 
+         // les typename ici sont obligatoires ; buckets_t générique n’est pas pleinement connu à ce stade
+    // du coup buckets_t::identifiant pourrait être n’importe quoi, e.g. un nom 92 de fonction, un attribut
+    // on doit aider le compilo en précisant que c’est un nom de type dit " nested".
+    // pour borner les itérations sur vit (itérateur fixe). 
+    // On pourrait a la place détenir un pointeur ou une ref à buckets, et utiliser buckets.end()
+    typename buckets_t::iterator buckend; 
+    // le curseur qui indique le bucket (case du vector) qu’on est en train d’it érer
+    typename buckets_t::iterator vit; 
+     // le curseur qui indique le chainon de liste dans ce bucket où on en est 100 
+    typename std::forward_list<Entry>::iterator lit; 
+    public : 
+ // ctor : copie des arguments 103 
+    iterator(const typename buckets_t::iterator & buckend, const typename
+        buckets_t::iterator & vit, const typename std::forward_list<Entry>:: iterator & lit)
+        :buckend(buckend), vit(vit),lit(lit){}
+
+    iterator & operator++() {
+         // on se décale dans la liste courante 
+        ++lit; 
+        // test : faut il changer de liste/bucket 
+        if (lit == vit->end()) { 
+            // on se décale d’un bucket pour commencer
+            ++vit; 
+            // on continue de se décaler tant que les buckets sont vides 
+            while (vit->empty() && vit != buckend) { 
+                ++vit; 
+            }
+
+        // si on déborde, c’est fini, on sortira avec un vit==buckend 
+        if (vit != buckend) { 
+            // sinon, on positionne lit au début de la liste dans ce  bucket
+            lit = vit->begin(); 
+            } 
+            } 
+            // par convention 
+            return *this; 
+        }     
+        Entry & operator*() { 
+            // on déreference simplement lit, iterateur de liste de Entry 
+            // donc on obtient un Entry 
+            return *lit; 
+        }       
+        
+        bool operator!=(iterator other) { 
+            return vit != other.vit || lit != other.lit; 
+        } 
+    }; 
+
+
+
+    
+
+    iterator begin() { 
+        // on doit chercher le premier bucket non vide s’il existe 
+    typename buckets_t::iterator vit = buckets.begin(); 
+    while (vit->empty() && vit != buckets.end()) { 
+        ++vit; 
+    } 
+    if (vit != buckets.end()) { 
+        // on a trouve au moins un bucket non vide
+        return iterator(buckets.end(),vit,vit->begin()); 
+    } else { 
+        // ce map est vide ! TODO : on aurait du tester size pour s’en apercevoir tt de suite
+        return end(); 
+    }
+    } 
+    iterator end() { 
+        // la valeur du troisième itérateur ne change pas grand chose (c’est un iterator qui porte nullptr)
+        return iterator(buckets.end(),buckets.end(),buckets.front().end()); 
+    } 
+
+    
+}; 
+} /* namespace pr */ 
+#endif /* SRC_HASH_H_ */
+
+	
+
+
+
+	//能编译通过的
+#ifndef SRC_HASHMAP_H_
+#define SRC_HASHMAP_H_
+
+#include <cstddef>
+#include <ostream>
+#include <forward_list>
+#include <vector>
+#include <algorithm> // 添加这个头文件
+
+namespace pr {
+
+template <typename K, typename V>
+class HashMap {
+public:
+    class Entry {
+    public:
+        K key;
+        V value;
+        Entry(const K &k, const V& v) : key(k), value(v) {}
+    };
+
+private:
+    typedef std::vector<std::forward_list<Entry> > buckets_t;
+    buckets_t buckets;
+    size_t sz;
+
+public:
+    HashMap(size_t size) : buckets(size), sz(0) {}
+
+    V* get(const K & key) {
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (Entry & ent : buckets[target]) {
+            if (ent.key == key) {
+                return & ent.value;
+            }
+        }
+        return nullptr;
+    }
+
+    std::pair<typename std::forward_list<Entry>::iterator, bool> put(const K & key, const V & value) {
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (Entry & ent : buckets[target]) {
+            if (ent.key == key) {
+                return std::make_pair(buckets[target].before_begin(), false);
+            }
+        }
+        sz++;
+        buckets[target].emplace_front(Entry(key, value));
+        return std::make_pair(buckets[target].before_begin(), true);
+    }
+
+    size_t size() const { return sz; }
+
+    void grow() {
+        HashMap other = HashMap(buckets.size() * 2);
+        for (auto & list : buckets) {
+            for (auto & entry : list) {
+                other.put(entry.key, entry.value);
+            }
+        }
+        buckets = std::move(other.buckets);
+    }
+
+    typename std::forward_list<Entry>::iterator begin() {
+        for (size_t i = 0; i < buckets.size(); ++i) {
+            if (!buckets[i].empty()) {
+                return buckets[i].begin();
+            }
+        }
+        return buckets.back().end(); // Return the end of the last bucket if all buckets are empty
+    }
+
+    typename std::forward_list<Entry>::iterator end() {
+        return buckets.back().end();
+    }
+
+
+    typename std::forward_list<Entry>::iterator find(const K & key) {
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (auto it = buckets[target].begin(); it != buckets[target].end(); ++it) {
+            if (it->key == key) {
+                return it;
+            }
+        }
+        return buckets[target].end();
+    }
+    };
+    } /* namespace pr */
+
+
+
+	//cpp
+	#include <iostream>
+#include <fstream>
+#include <regex>
+#include <chrono>
+#include <vector>
+#include <algorithm>
+#include "HashMap.h"
+
+using namespace std;
+using namespace pr;
+
+void printFrequency (const string & word, HashMap<string,int> & map) { 
+	auto it = map.find(word); 
+	//如果找到满足条件的元素，it 将指向该元素；如果未找到满足条件的元素，it 将指向范围的末尾
+	if (it != map.end()) {  
+		std::cout << "Frequency : " << it->key << ":" << it->value << endl; 
+		} else {
+			 std::cout << "Word :"<< word << " not found." << endl; 
+		}
+}
+int main() {
+    //HashMap<std::string, int> map(2 << 18); // 256 k word capacity
+    HashMap<std::string, int> map(256 * 1024); // 256 K word capacity
+    ifstream input = ifstream("/tmp/WarAndPeace.txt");
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    std::cout << "Parsing War and Peace" << endl;
+    std::string s;
+    regex re(R"([^a-zA-Z])");
+    while (input >> s) {
+        s = regex_replace(s, re, "");
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        auto ret = map.insert({s, 1});
+        if (!ret.second) {
+            (*ret.first).value++;
+        }
+    }
+    input.close();
+
+    
+    std::cout << "Finished Parsing War and Peace" << endl;
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Parsing with hash took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << "ms.\n";
+    start = std::chrono::steady_clock::now();
+    std::cout << "Parsing War and Peace" << endl;
+    vector<pair<string, int> > counts;
+    counts.reserve(5000);
+    input = ifstream("/tmp/WarAndPeace.txt");
+    while (input >> s) {
+        s = regex_replace(s, re, "");
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        auto it = counts.begin(); 
+		while (it != counts.end()) { 
+			if (it->first == s) { 
+				break; 
+			} 
+			++it;
+        } 
+        if (it != counts.end()) { 
+            it->second++; 
+        } else { 
+                counts.push_back(make_pair(s,1));
+        } 
+    }	 
+    input.close();
+    end = std::chrono::steady_clock::now();
+    std::cout << "Parsing with pair<string,int> took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << "ms.\n";
+
+    printFrequency("war", map);
+    printFrequency("peace", map);
+    printFrequency("toto", map);
+
+    start = std::chrono::steady_clock::now();
+    std::cout << "Most frequent" << endl;
+    std::vector<pr::HashMap<std::string, int>::Entry * > entries;
+    entries.reserve(map.size());
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        entries.push_back(&(*it));
+    }
+    std::sort(entries.begin(), entries.end(), [](auto a, auto b) { return a->value > b->value; });
+    int line = 0;
+    for (const auto & val : entries) {
+        std::cout << val->key << "->" << val->value << " ,";
+        if (++line % 10 == 0) {
+            std::cout << endl;
+        }
+        if (line == 100) {
+            break;
+        }
+    }
+    std::cout << std::endl;
+
+    end = std::chrono::steady_clock::now();
+    std::cout << "Sorting by frequency took "
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
+              << "us.\n";
+    return 0;
+}

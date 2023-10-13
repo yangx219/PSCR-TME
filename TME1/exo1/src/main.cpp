@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstring>
 
+
 int main () {
 
 	std::string abc = "abc";
@@ -30,9 +31,9 @@ int main () {
 
 	// liberer les char de la chaine
 	for (char *cp = str ; *cp ; cp++) {
-		delete cp;
+		delete[] cp;
 	}
 	// et la chaine elle meme
-	delete str;
+	delete[] str;
 
 }
