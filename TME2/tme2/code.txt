@@ -624,3 +624,219 @@ int main() {
               << "us.\n";
     return 0;
 }
+
+
+
+//push版本
+#ifndef SRC_HASHMAP_H_
+#define SRC_HASHMAP_H_
+
+#include <cstddef>
+#include <ostream>
+#include <forward_list>
+#include <vector>
+#include <algorithm> // 添加这个头文件
+
+namespace pr {
+
+template <typename K, typename V>
+class HashMap {
+public:
+    class Entry {
+    public:
+        K key;
+        V value;
+        Entry(const K &k, const V& v) : key(k), value(v) {}
+    };
+
+private:
+    typedef std::vector<std::forward_list<Entry> > buckets_t;
+    buckets_t buckets;
+    size_t sz;
+
+public:
+    HashMap(size_t size) : buckets(size), sz(0) {}
+
+    V* get(const K & key) {
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (Entry & ent : buckets[target]) {
+            if (ent.key == key) {
+                return & ent.value;
+            }
+        }
+        return nullptr;
+    }
+
+    std::pair<typename std::forward_list<Entry>::iterator, bool> put(const std::pair<K, V>& kvPair) {
+    const K& key = kvPair.first;
+    const V& value = kvPair.second;
+
+    size_t h = std::hash<K>()(key);
+    size_t target = h % buckets.size();
+    for (Entry& ent : buckets[target]) {
+        if (ent.key == key) {
+            ent.value = value; // 更新现有值
+            return std::make_pair(buckets[target].before_begin(), false);
+        }
+    }
+    sz++;
+    buckets[target].emplace_front(Entry(key, value)); // 插入新的键值对
+    return std::make_pair(buckets[target].before_begin(), true);
+}
+
+
+
+
+    size_t size() const { return sz; }
+
+    void grow() {
+        HashMap other = HashMap(buckets.size() * 2);
+        for (auto & list : buckets) {
+            for (auto & entry : list) {
+                other.put(entry.key, entry.value);
+            }
+        }
+        buckets = std::move(other.buckets);
+    }
+
+    typename std::forward_list<Entry>::iterator begin() {
+        for (size_t i = 0; i < buckets.size(); ++i) {
+            if (!buckets[i].empty()) {
+                return buckets[i].begin();
+            }
+        }
+        return buckets.back().end(); // Return the end of the last bucket if all buckets are empty
+    }
+
+    typename std::forward_list<Entry>::iterator end() {
+        return buckets.back().end();
+    }
+
+
+    typename std::forward_list<Entry>::iterator find(const K & key) {
+        size_t h = std::hash<K>()(key);
+        size_t target = h % buckets.size();
+        for (auto it = buckets[target].begin(); it != buckets[target].end(); ++it) {
+            if (it->key == key) {
+                return it;
+            }
+        }
+        return buckets[target].end();
+    }
+    };
+    } /* namespace pr */
+#endif /* SRC_HASH_H_ */
+
+
+//push版本
+
+#include <iostream>
+#include <fstream>
+#include <regex>
+#include <chrono>
+#include <vector>
+#include <algorithm>
+#include "HashMap.h"
+
+using namespace std;
+using namespace pr;
+
+void printFrequency (const string & word, HashMap<string,int> & map) { 
+	auto it = map.find(word); 
+	//如果找到满足条件的元素，it 将指向该元素；如果未找到满足条件的元素，it 将指向范围的末尾
+	if (it != map.end()) {  
+		std::cout << "Frequency : " << it->key << ":" << it->value << endl; 
+		} else {
+			 std::cout << "Word :"<< word << " not found." << endl; 
+		}
+}
+int main() {
+    //HashMap<std::string, int> map(2 << 18); // 256 k word capacity
+    HashMap<std::string, int> map(256 * 1024); // 256 K word capacity
+    ifstream input = ifstream("./WarAndPeace.txt");
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    std::cout << "Parsing War and Peace" << endl;
+    std::string s;
+    regex re(R"([^a-zA-Z])");
+      printf("test1\n");
+      
+    /***/while (input >> s) {
+          printf("test2\n");
+        s = regex_replace(s, re, "");
+          printf("test3\n");
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        //auto ret = map.insert({s, 1});
+        auto ret = map.put({s, 1});
+
+        if (!ret.second) {
+            (*ret.first).value++;
+        }
+    }
+    input.close();
+
+    printf("test1\n");
+
+    
+    std::cout << "Finished Parsing War and Peace" << endl;
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Parsing with hash took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << "ms.\n";
+    start = std::chrono::steady_clock::now();
+    std::cout << "Parsing War and Peace" << endl;
+    vector<pair<string, int> > counts;
+    counts.reserve(5000);
+    input = ifstream("./WarAndPeace.txt");
+    while (input >> s) {
+        s = regex_replace(s, re, "");
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        auto it = counts.begin(); 
+		while (it != counts.end()) { 
+			if (it->first == s) { 
+				break; 
+			} 
+			++it;
+        } 
+        if (it != counts.end()) { 
+            it->second++; 
+        } else { 
+                counts.push_back(make_pair(s,1));
+        } 
+    }	 
+    input.close();
+    end = std::chrono::steady_clock::now();
+    std::cout << "Parsing with pair<string,int> took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << "ms.\n";
+
+    printFrequency("war", map);
+    printFrequency("peace", map);
+    printFrequency("toto", map);
+
+    start = std::chrono::steady_clock::now();
+    std::cout << "Most frequent" << endl;
+    std::vector<pr::HashMap<std::string, int>::Entry * > entries;
+    entries.reserve(map.size());
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        entries.push_back(&(*it));
+    }
+    std::sort(entries.begin(), entries.end(), [](auto a, auto b) { return a->value > b->value; });
+    int line = 0;
+    for (const auto & val : entries) {
+        std::cout << val->key << "->" << val->value << " ,";
+        if (++line % 10 == 0) {
+            std::cout << endl;
+        }
+        if (line == 100) {
+            break;
+        }
+    }
+    std::cout << std::endl;
+
+    end = std::chrono::steady_clock::now();
+    std::cout << "Sorting by frequency took "
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
+              << "us.\n";
+    return 0;
+}
