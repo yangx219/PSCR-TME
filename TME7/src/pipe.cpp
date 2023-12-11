@@ -26,7 +26,7 @@ void myexec(int argc, char ** args) {
     }
 }
 
-// La fonction principale.
+
 int main(int argc, char ** argv) {
     // Partitionne les arguments en deux ensembles pour deux commandes.
     char * args1[argc];
