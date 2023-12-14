@@ -1,15 +1,38 @@
 #include "Vec3D.h"
 #include "Rayon.h"
 #include "Scene.h"
+#include "Job.h"
+#include "Barrier.h"
 #include <iostream>
 #include <algorithm>
 #include <fstream>
 #include <limits>
 #include <random>
-
+#include <vector>
+#include <thread>
+//g++ -std=c++11 Color.cpp Vec3D.cpp main.cpp -o tme5
+//  ./tme5
 using namespace std;
 using namespace pr;
+//pour 
+class DrawJobBarrier : public Job {
+public:
+	DrawJobBarrier(const Vec3D& screenPoint, Color& pixel, const Scene& scene, const vector<Vec3D>& lights, Barrier* barrier)
+		: screenPoint(screenPoint), pixel(pixel), scene(scene), lights(lights), barrier(barrier) {}
 
+	int foo(int v) {
+		//处理大量计算
+		this_thread::sleep_for(chrono::milliseconds(100));
+		return v % 255;
+	}
+
+private:
+	const Vec3D& screenPoint;
+	Color& pixel;
+	const Scene& scene;
+	const vector<Vec3D>& lights;
+	Barrier* barrier;
+};
 
 void fillScene(Scene & scene, default_random_engine & re) {
 	// Nombre de spheres (rend le probleme plus dur)
@@ -160,4 +183,3 @@ int main () {
 
 	return 0;
 }
-

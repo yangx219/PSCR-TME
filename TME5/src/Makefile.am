@@ -14,6 +14,11 @@ AM_LDFLAGS = -pthread
 #cible_LDFLAGS = -pthread 
 
 tme5_SOURCES = Color.cpp Color.h main.cpp Rayon.h Scene.h Sphere.h Vec3D.cpp Vec3D.h
+
+tme5:
+    g++ tme5_SOURCES -o tme5
+    ./tme5
+
  
 
 
