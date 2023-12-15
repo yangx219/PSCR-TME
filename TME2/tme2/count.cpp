@@ -9,7 +9,7 @@
 using namespace std;
 using namespace std::chrono;
 
-int occurences_mot(const string mot, vector <pair<string,int>> tab_mot);
+int occurences_mot(const string mot, vector <pair<string,int> > tab_mot);
 
 int main ()
 {
@@ -26,7 +26,7 @@ int main ()
 	regex re( R"([^a-zA-Z])");
 
 	// On met ici le vecteur qui stockera les mots
-	vector <pair <string,int>> unique_words_and_count;
+	vector <pair <string,int> > unique_words_and_count;
 
 	while (input >> word) {
 		// élimine la ponctuation et les caractères spéciaux
@@ -76,7 +76,7 @@ int main ()
 	return 0;
 }
 
-int occurences_mot(const string mot, const vector <pair<string,int>> tab_mot)
+int occurences_mot(const string mot, const vector <pair<string,int> > tab_mot)
 {
 	for (int i = 0; i < tab_mot.size(); ++i) {
 		if (mot == tab_mot[i].first) {

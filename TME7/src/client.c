@@ -5,6 +5,9 @@
 #include <signal.h> // for sigaction
 #include <unistd.h> // for sleep
 
+//gcc -o client client.c -lpthread
+//./client id_client id_server
+//./client client1 my_shared_memory
     int shouldexit = 0;
     struct myshm *shm_client, *shm_pere;
     void *reader(void* arg){ while(!shouldexit){
@@ -127,3 +130,12 @@
 
     return EXIT_SUCCESS;
 }
+
+
+/***共享内存 (shm_client, shm_pere)：用于存储客户端和服务器之间的消息。
+信号量 (sem_client)：用于同步对共享内存的访问。
+消息类型：
+0 表示连接消息。
+1 表示普通聊天消息。
+2 表示断开连接消息。
+线程函数 (reader, writer)：分别用于在后台持续读取和写入消息*/

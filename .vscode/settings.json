@@ -71,7 +71,8 @@
     "__memory": "cpp",
     "filesystem": "cpp",
     "regex": "cpp",
-    "list": "cpp"
+    "list": "cpp",
+    "chat_common.h": "c"
   },
   "C_Cpp_Runner.cCompilerPath": "clang",
   "C_Cpp_Runner.cppCompilerPath": "clang++",

@@ -3,10 +3,11 @@
 #include <unistd.h>
 #include <string>
 
-
+//g++ -std=c++11 client.cpp Socket.cpp ServerSocket.cpp -o client
+//    ./client
 int main00() {
 	pr::Socket sock;
-	sock.connect("localhost", 1664);
+	sock.connect("localhost", 1667);
 	int N=42;
 	write(sock.getFD(),&N,sizeof(int));
 	read(sock.getFD(),&N,sizeof(int));
@@ -20,7 +21,7 @@ int main0() {
 
 	pr::Socket sock;
 
-	sock.connect("localhost", 1664);
+	sock.connect("localhost", 1667);
 
 	if (sock.isOpen()) {
 		int fd = sock.getFD();
@@ -49,7 +50,7 @@ int main() {
 
 	pr::Socket sock;
 
-	sock.connect("localhost", 1664);
+	sock.connect("localhost", 1667);
 
 	if (sock.isOpen()) {
 		int fd = sock.getFD();

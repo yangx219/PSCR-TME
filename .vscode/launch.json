@@ -6,8 +6,8 @@
       "type": "lldb",
       "request": "launch",
       "args": [],
-      "cwd": "/Users/yangxue/Desktop/PSCR/PSCR-TME/TME2/tme2",
-      "program": "/Users/yangxue/Desktop/PSCR/PSCR-TME/TME2/tme2/build/Debug/outDebug"
+      "cwd": "/Users/yangxue/Desktop/PSCR/PSCR-TME/TME7/src",
+      "program": "/Users/yangxue/Desktop/PSCR/PSCR-TME/TME7/src/build/Debug/outDebug"
     }
   ]
 }

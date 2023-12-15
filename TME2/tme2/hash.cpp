@@ -17,7 +17,7 @@ class HashMap {
 		V value;
 		Entry(const K& key, const V& value) : key(key), value(value) {}
 	};
-	std::vector <std::forward_list<Entry>> buckets;
+	std::vector <std::forward_list<Entry> > buckets;
 	size_t nb_stored_values;
 
 public:

@@ -9,7 +9,7 @@
 //gcc -o serveur serveur.c -lpthread
 //./serveur my_shared_memory
 
-// Gestionnaire de signal pour la terminaison du serveur
+// Gestionnaire de signal pour la terminaison du serveur------Ctrl+C
 int shouldexit = 0;
 void exithandler(int sig) {
     // Assigner le signal reçu à l'indicateur de sortie
@@ -39,10 +39,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Configurer le gestionnaire de signal pour Ctrl-C
-    action.sa_handler = exithandler; // Fonction à appeler lors de la réception de SIGINT
-    action.sa_flags = 0; // Options du gestionnaire de signal
-    sigemptyset(&action.sa_mask); // Initialiser l'ensemble des signaux bloqués
-    sigaction(SIGINT, &action, 0); // Appliquer l'action pour le signal SIGINT
+    // Fonction à appeler lors de la réception de SIGINT
+    action.sa_handler = exithandler; 
+    // Options du gestionnaire de signal
+    action.sa_flags = 0; 
+    // Initialiser l'ensemble des signaux bloqués
+    sigemptyset(&action.sa_mask); 
+    // Appliquer l'action pour le signal SIGINT
+    sigaction(SIGINT, &action, 0); 
 
     // Créer l'identifiant du segment de mémoire partagée
     shmname = argv[1];
@@ -208,7 +212,7 @@ int main(int argc, char *argv[]) {
     munmap(shm_pere, sizeof(struct myshm));
     shm_unlink(shmname);
 
-    // When done, close the semaphore
+    //close the semaphore
     sem_close(sem);
     // Unlink the semaphore if it's no longer needed
     sem_unlink("/mysemaphore");

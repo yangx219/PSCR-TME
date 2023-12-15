@@ -5,15 +5,18 @@
 #include <vector>    
 #include <signal.h>  // Pour gérer les signaux
 
+//使用共享内存和进程间通信实现生产者消费者模型
 using namespace std;
 using namespace pr;
 
 void handle_sigint(int sig) {
-    sem_unlink(SEM_PRODUCER_NAME); // Supprime le sémaphore du producteur
-    sem_unlink(SEM_CONSUMER_NAME); // Supprime le sémaphore du consommateur
-    exit(0); // Termine le programme immédiatement
+    // Supprime le sémaphore du producteur
+    sem_unlink(SEM_PRODUCER_NAME); 
+    // Supprime le sémaphore du consommateur
+    sem_unlink(SEM_CONSUMER_NAME); 
+    exit(0); 
 }
-
+//producteur est un processus qui lit des caractères depuis l'entrée standard et les ajoute à la pile
 void producteur(Stack<char> *stack) {
     cout << "Le producteur a démarré. Entrez des caractères:" << endl;
     char c;
@@ -25,6 +28,7 @@ void producteur(Stack<char> *stack) {
     }
 }
 
+//consommateur est un processus qui retire des caractères de la pile et les affiche sur la sortie standard
 void consommateur(Stack<char> *stack) {
     cout << "Le consommateur a démarré." << endl;
     while (true) {
@@ -42,21 +46,24 @@ int main() {
                                -1, 0);
     Stack<char> *s = new(shared_memory) Stack<char>(); // 在共享内存中构造栈
 
-    pid_t pp = fork(); // Crée un processus enfant
+    // Crée un processus enfant
+    pid_t pp = fork(); 
+    // Termine le processus enfant du producteur
     if (pp == 0) {
         producteur(s);
-        return 0; // Termine le processus enfant du producteur
+        return 0; 
     }
-
-    pid_t pc = fork(); // Crée un autre processus enfant
+    // Crée un autre processus enfant
+    pid_t pc = fork(); 
     if (pc == 0) {
         consommateur(s);
-        return 0; // Termine le processus enfant du consommateur
+        return 0; 
     }
-
-    wait(nullptr); // Attend la fin du processus du producteur
-    wait(nullptr); // Attend la fin du processus du consommateur
+     // Attend la fin du processus du producteur
+    wait(nullptr);
+    // Attend la fin du processus du consommateur
+    wait(nullptr); 
 
     munmap(shared_memory, sizeof(Stack<char>)); // 释放共享内存
-    return 0; // Termine le programme principal
+    return 0; 
 }

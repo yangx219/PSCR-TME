@@ -1,5 +1,6 @@
 g++ -Wall -std=c++14 main.
-
+g++ -std=c++11 -c Banque.cpp -o Banque.o
+g++ Banque.o Compte.o main.o -o MyProgram
 
 Q2:
 #include <iostream>

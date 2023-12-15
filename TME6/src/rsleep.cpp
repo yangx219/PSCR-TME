@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include "rsleep.h"
 
+// randsleep() sleeps for a random time between 0.3 and 1.0 seconds
 void randsleep() {
   int r = rand();
   double ratio = (double)r / (double) RAND_MAX;
@@ -10,6 +11,7 @@ void randsleep() {
   // 300 millions de ns = 0.3 secondes
   tosleep.tv_nsec = 300000000 + ratio*700000000;
   struct timespec remain;
+  // nanosleep renvoie -1 si elle est interrompue par un signal
   while ( nanosleep(&tosleep, &remain) != 0) {
     tosleep = remain;
   }

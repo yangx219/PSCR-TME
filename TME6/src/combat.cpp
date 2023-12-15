@@ -1,13 +1,14 @@
-#include <sys/types.h> // 包含数据类型，如pid_t
-#include <sys/wait.h> // 包含进程控制的函数，如wait()
-#include <unistd.h> // 提供对POSIX操作系统API的访问
-#include <time.h> // 提供标准时间库函数
-#include <cstdio> // 提供标准输入输出库函数
-#include <cstdlib> // 提供标准库函数，如exit()
-#include <csignal> // 提供信号处理库函数
-#include "rsleep.h" // 可能是提供随机休眠功能的自定义库
+#include <sys/types.h> 
+#include <sys/wait.h>
+#include <unistd.h> 
+#include <time.h> 
+#include <cstdio> 
+#include <cstdlib> 
+#include <csignal> 
+#include "rsleep.h" 
 
-//g++ -o combat combat.cpp rsleep.cpp
+//g++ combat.cpp rsleep.cpp -o combat
+//    ./combat
 // 生命值，全局变量，每个进程初始有3点生命值
 int PV = 3;
 
@@ -49,12 +50,12 @@ void combat(pid_t adversaire) {
 
 int main() {
     pid_t pere = getpid(); // 获取当前进程的PID
-    pid_t pid = fork(); // 创建子进程
+    pid_t pid = fork(); 
     srand(pid); // 以pid作为随机数种子
     if (pid == 0) { // 子进程
         combat(pere); // 子进程开始战斗，以父进程为对手
-    } else { // 父进程
+    } else { 
         combat(pid); // 父进程开始战斗，以子进程为对手
     }
-    return 0; // 程序正常退出
+    return 0; 
 }

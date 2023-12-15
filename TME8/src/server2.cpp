@@ -1,7 +1,11 @@
 #include "TCPServer.h"
+#include "Socket.h"
+#include "ServerSocket.h"
 #include <iostream>
 #include <unistd.h>
 
+//g++ -std=c++11 server2.cpp Socket.cpp ServerSocket.cpp TCPServer.cpp -o server2
+//    ./server2
 
 class IncrementServer : public pr::ConnectionHandler {
 
@@ -42,7 +46,7 @@ int main() {
 
 	pr::TCPServer server(new IncrementServer());
 
-	server.startServer(1664);
+	server.startServer0(1667, "localhost"); // Add the second argument for the server address
 
 	// attend entree sur la console
 	std::string s ;
@@ -55,4 +59,3 @@ int main() {
 
 	return 0;
 }
-
